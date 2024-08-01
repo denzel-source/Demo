@@ -121,7 +121,66 @@ const authenticateToken = (req, res, next) => {
 };
 
 app.use(authenticateToken); // Apply this middleware to routes that need authentication
+app.post('/expenses/add', (req, res) => {
+    const { amount, description, date } = req.body;
+    const userId = req.user.id; // Assuming user ID is available in the request after authentication
+    db.query('INSERT INTO expenses (user_id, amount, description, date) VALUES (?, ?, ?, ?)', [userId, amount, description, date], (err, results) => {
+        if (err) {
+            return res.status(500).send('Server error');
+        }
+        res.status(201).send('Expense added');
+    });
+});
+  // Assuming you have the necessary imports and middleware in place
 
+// Route to view all expenses for a user
+app.get('/expenses', (req, res) => {
+    const userId = req.user.id; // Assuming user ID is available after authentication
+
+    db.query('SELECT * FROM expenses WHERE user_id = ?', [userId], (err, results) => {
+        if (err) {
+            return res.status(500).send('Server error');
+        }
+        res.status(200).json(results);
+    });
+});
+      // Route to edit an expense
+app.put('/expenses/edit/:id', (req, res) => {
+    const expenseId = req.params.id;
+    const { amount, description, date } = req.body;
+    const userId = req.user.id; // Assuming user ID is available after authentication
+
+    // Optional: You may want to check if the expense belongs to the user before updating
+    db.query('UPDATE expenses SET amount = ?, description = ?, date = ? WHERE id = ? AND user_id = ?', 
+        [amount, description, date, expenseId, userId], 
+        (err, results) => {
+            if (err) {
+                return res.status(500).send('Server error');
+            }
+            if (results.affectedRows === 0) {
+                return res.status(404).send('Expense not found or not authorized');
+            }
+            res.status(200).send('Expense updated successfully');
+        }
+    );
+});
+      // Route to delete an expense
+app.delete('/expenses/delete/:id', (req, res) => {
+    const expenseId = req.params.id;
+    const userId = req.user.id; // Assuming user ID is available after authentication
+
+    // Optional: Verify that the expense belongs to the user
+    db.query('DELETE FROM expenses WHERE id = ? AND user_id = ?', [expenseId, userId], (err, results) => {
+        if (err) {
+            return res.status(500).send('Server error');
+        }
+        if (results.affectedRows === 0) {
+            return res.status(404).send('Expense not found or not authorized');
+        }
+        res.status(200).send('Expense deleted successfully');
+    });
+});
+      
 
 app.listen(3000, () => {
     console.log('Server running on port 3000');
