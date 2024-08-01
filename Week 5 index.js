@@ -59,6 +59,72 @@ db.query(createExpensesTable, (err) => {
 });
 
 // Step 6: Implement user authentication
+const jwt = require('jsonwebtoken');
+
+const authenticateToken = (req, res, next) => {
+    const token = req.header('Authorization');
+    if (!token) return res.status(401).send('Access Denied');
+    try {
+        const verified = jwt.verify(token, 'your_secret_key');
+        req.user = verified;
+        next();
+    } catch (err) {
+        res.status(400).send('Invalid Token');
+    }
+};
+
+app.use(authenticateToken); // Apply this middleware to routes that need authentication
+
 // User registration and login functionalities
 
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password123, 10);
+    db.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword], (err, results) => {
+        if (err) {
+            return res.status(500).send('Server error');
+        }
+        res.status(201).send('User registered');
+    });
+});
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    // Check if the user exists
+    db.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
+        if (err) {
+            return res.status(500).send('Server error');
+        }
+        if (results.length === 0) {
+            return res.status(401).send('Invalid username or password');
+        }
+
+        const user = results[0];
+
+        // Compare the provided password with the stored hashed password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).send('Invalid username or password');
+           }
+      const jwt = require('jsonwebtoken');
+
+const authenticateToken = (req, res, next) => {
+    const token = req.header('Authorization');
+    if (!token) return res.status(401).send('Access Denied');
+    try {
+        const verified = jwt.verify(token, 'your_secret_key');
+        req.user = verified;
+        next();
+    } catch (err) {
+        res.status(400).send('Invalid Token');
+    }
+};
+
+app.use(authenticateToken); // Apply this middleware to routes that need authentication
+
+
+app.listen(3000, () => {
+    console.log('Server running on port 3000');
+});
+           
 // Step 7: Securely store passwords using hashing techniques
