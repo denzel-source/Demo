@@ -9,9 +9,14 @@ const express = require('express');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 
 const app = express();
 app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname,'index.html'));
+});
 
 const db = mysql.createConnection({
   host: 'localhost',
@@ -87,6 +92,11 @@ app.post('/register', async (req, res) => {
         res.status(201).send('User registered');
     });
 });
+
+app.get('/register', (req, res) => {
+    res.sendFile(path.join(__dirname, 'register.html'));
+});
+
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
@@ -121,6 +131,9 @@ const authenticateToken = (req, res, next) => {
 };
 
 app.use(authenticateToken); // Apply this middleware to routes that need authentication
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
 app.post('/expenses/add', (req, res) => {
     const { amount, description, date } = req.body;
     const userId = req.user.id; // Assuming user ID is available in the request after authentication
